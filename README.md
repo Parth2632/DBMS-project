@@ -1,257 +1,238 @@
-﻿# DBMS-project
+﻿# 🚪 Visitor & Access Management System (DBMS Project)
 
-CREATE DATABASE IF NOT EXISTS visitor_access_management;
-USE visitor_access_management;
+A backend-driven system for managing visitors in a college/hostel environment.
 
--- =========================
--- 1. TABLE CREATION
--- =========================
+---
 
-CREATE TABLE visitor (
-    visitor_id INT AUTO_INCREMENT PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    phone_no VARCHAR(15) NOT NULL,
-    email VARCHAR(100) UNIQUE,
-    id_proof_type VARCHAR(50) NOT NULL,
-    id_proof_number VARCHAR(50) NOT NULL UNIQUE
-);
+## 🧠 Project Overview
 
-CREATE TABLE host (
-    host_id INT AUTO_INCREMENT PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    department VARCHAR(100),
-    phone_no VARCHAR(15),
-    email VARCHAR(100) UNIQUE,
-    host_type ENUM('Student', 'Faculty', 'Staff') NOT NULL,
-    roll_number VARCHAR(20) UNIQUE
-);
+This system handles the complete lifecycle of a visitor:
 
-CREATE TABLE admin (
-    admin_id INT AUTO_INCREMENT PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE,
-    phone_no VARCHAR(15),
-    role ENUM('Security', 'Admin', 'SuperAdmin') NOT NULL
-);
+```
+Visitor → Visit Request → Admin Approval → Entry → Exit → History
+```
 
-CREATE TABLE visit_request (
-    request_id INT AUTO_INCREMENT PRIMARY KEY,
-    visitor_id INT NOT NULL,
-    host_id INT NOT NULL,
-    visit_date DATE NOT NULL,
-    purpose VARCHAR(255) NOT NULL,
-    approval_status ENUM('Pending', 'Approved', 'Rejected', 'Completed') DEFAULT 'Pending',
-    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    approved_by_admin_id INT,
-    approval_time DATETIME,
-    rejection_reason VARCHAR(255),
+### Features
 
-    FOREIGN KEY (visitor_id) REFERENCES visitor(visitor_id),
-    FOREIGN KEY (host_id) REFERENCES host(host_id),
-    FOREIGN KEY (approved_by_admin_id) REFERENCES admin(admin_id)
-);
+* Create visitor records
+* Request visits to host (student/faculty/staff)
+* Admin approval/rejection system
+* Entry and exit tracking
+* View current visitors inside campus
+* Maintain full visit history
 
-CREATE TABLE entry_log (
-    log_id INT AUTO_INCREMENT PRIMARY KEY,
-    request_id INT UNIQUE,
-    entry_time DATETIME,
-    exit_time DATETIME,
+---
 
-    FOREIGN KEY (request_id) REFERENCES visit_request(request_id)
-);
+## 🧩 Tech Stack
 
--- =========================
--- 2. SAMPLE DATA
--- =========================
+* **Backend:** Node.js, Express.js
+* **Database:** MySQL
+* **API Testing:** Postman
 
-INSERT INTO visitor (full_name, phone_no, email, id_proof_type, id_proof_number)
-VALUES
-('Rahul Sharma', '9876543210', 'rahul@gmail.com', 'Aadhar', 'A123456789'),
-('Priya Verma', '9123456780', 'priya@gmail.com', 'PAN', 'ABCDE1234F'),
-('Aman Gupta', '9988776655', 'aman@gmail.com', 'Driving License', 'DL987654321');
+---
 
-INSERT INTO host (full_name, department, phone_no, email, host_type, roll_number)
-VALUES
-('Parth Arora', 'COE', '9012345678', 'parth@student.thapar.edu', 'Student', '1024030122'),
-('Dr. Mehta', 'CSE', '9999999999', 'mehta@thapar.edu', 'Faculty', NULL),
-('Rohit Sharma', 'Administration', '8888888888', 'rohit@thapar.edu', 'Staff', NULL);
+## ⚙️ Backend Setup Guide
 
-INSERT INTO admin (full_name, email, phone_no, role)
-VALUES
-('Security Head', 'security@campus.com', '9876501234', 'Security'),
-('Main Admin', 'admin@campus.com', '9123405678', 'Admin');
+### 1️⃣ Clone the Repository
 
-INSERT INTO visit_request (visitor_id, host_id, visit_date, purpose)
-VALUES
-(1, 1, '2026-04-06', 'Project Discussion'),
-(2, 2, '2026-04-06', 'Academic Meeting'),
-(3, 3, '2026-04-06', 'Office Work'),
-(1, 2, '2026-04-07', 'Internship Guidance');
+```bash
+git clone <your-repo-url>
+cd <project-folder>/backend
+```
 
--- =========================
--- 3. APPROVAL / REJECTION
--- =========================
+---
 
--- Approve request 1
-UPDATE visit_request
-SET approval_status = 'Approved',
-    approved_by_admin_id = 2,
-    approval_time = NOW()
-WHERE request_id = 1;
+### 2️⃣ Install Dependencies
 
--- Approve request 2
-UPDATE visit_request
-SET approval_status = 'Approved',
-    approved_by_admin_id = 2,
-    approval_time = NOW()
-WHERE request_id = 2;
+```bash
+npm install
+```
 
--- Reject request 3
-UPDATE visit_request
-SET approval_status = 'Rejected',
-    approved_by_admin_id = 2,
-    approval_time = NOW(),
-    rejection_reason = 'Visitor does not have valid appointment'
-WHERE request_id = 3;
+---
 
--- Keep request 4 pending
+### 3️⃣ Create `.env` File
 
--- =========================
--- 4. ENTRY / EXIT LOGGING
--- =========================
+Create a `.env` file in the backend root folder and add:
 
--- Entry for approved requests
-INSERT INTO entry_log (request_id, entry_time)
-VALUES
-(1, NOW()),
-(2, NOW());
+```env
+PORT=5000
 
--- Exit for request 1
-UPDATE entry_log
-SET exit_time = NOW()
-WHERE request_id = 1;
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=visitor_access_management
+DB_PORT=3306
+```
 
--- Mark request 1 as completed after exit
-UPDATE visit_request
-SET approval_status = 'Completed'
-WHERE request_id = 1;
+👉 Replace `your_mysql_password` with your actual MySQL password.
 
--- request 2 stays inside campus (exit_time remains NULL)
+---
 
--- =========================
--- 5. BASIC CHECK QUERIES
--- =========================
+### 4️⃣ Setup MySQL Database
 
-SELECT * FROM visitor;
-SELECT * FROM host;
-SELECT * FROM admin;
-SELECT * FROM visit_request;
-SELECT * FROM entry_log;
+Run the SQL script:
 
--- =========================
--- 6. USEFUL JOIN QUERIES
--- =========================
+```bash
+database.sql
+```
 
--- All requests with visitor and host details
-SELECT 
-    vr.request_id,
-    v.full_name AS visitor_name,
-    h.full_name AS host_name,
-    vr.visit_date,
-    vr.purpose,
-    vr.approval_status,
-    vr.requested_at
-FROM visit_request vr
-JOIN visitor v ON vr.visitor_id = v.visitor_id
-JOIN host h ON vr.host_id = h.host_id;
+This will:
 
--- All approved requests
-SELECT 
-    vr.request_id,
-    v.full_name AS visitor_name,
-    h.full_name AS host_name,
-    vr.visit_date,
-    vr.purpose,
-    a.full_name AS approved_by,
-    vr.approval_time
-FROM visit_request vr
-JOIN visitor v ON vr.visitor_id = v.visitor_id
-JOIN host h ON vr.host_id = h.host_id
-LEFT JOIN admin a ON vr.approved_by_admin_id = a.admin_id
-WHERE vr.approval_status = 'Approved';
+* Create database: `visitor_access_management`
+* Create all required tables
+* Insert sample data
+* Setup approval, entry, and exit logs
+* Provide useful SQL queries for testing
 
--- All pending requests
-SELECT 
-    vr.request_id,
-    v.full_name AS visitor_name,
-    h.full_name AS host_name,
-    vr.visit_date,
-    vr.purpose
-FROM visit_request vr
-JOIN visitor v ON vr.visitor_id = v.visitor_id
-JOIN host h ON vr.host_id = h.host_id
-WHERE vr.approval_status = 'Pending';
+---
 
--- All rejected requests with reason
-SELECT 
-    vr.request_id,
-    v.full_name AS visitor_name,
-    h.full_name AS host_name,
-    vr.rejection_reason
-FROM visit_request vr
-JOIN visitor v ON vr.visitor_id = v.visitor_id
-JOIN host h ON vr.host_id = h.host_id
-WHERE vr.approval_status = 'Rejected';
+### 5️⃣ Run the Server
 
--- Visitors currently inside campus
-SELECT 
-    v.full_name AS visitor_name,
-    h.full_name AS host_name,
-    e.entry_time
-FROM entry_log e
-JOIN visit_request vr ON e.request_id = vr.request_id
-JOIN visitor v ON vr.visitor_id = v.visitor_id
-JOIN host h ON vr.host_id = h.host_id
-WHERE e.exit_time IS NULL;
+```bash
+npm run dev
+```
 
--- Full visit history
-SELECT 
-    v.full_name AS visitor_name,
-    h.full_name AS host_name,
-    vr.visit_date,
-    vr.purpose,
-    e.entry_time,
-    e.exit_time
-FROM entry_log e
-JOIN visit_request vr ON e.request_id = vr.request_id
-JOIN visitor v ON vr.visitor_id = v.visitor_id
-JOIN host h ON vr.host_id = h.host_id;
+Expected output:
 
--- Total visit time in minutes
-SELECT 
-    v.full_name AS visitor_name,
-    h.full_name AS host_name,
-    e.entry_time,
-    e.exit_time,
-    TIMESTAMPDIFF(MINUTE, e.entry_time, e.exit_time) AS total_visit_minutes
-FROM entry_log e
-JOIN visit_request vr ON e.request_id = vr.request_id
-JOIN visitor v ON vr.visitor_id = v.visitor_id
-JOIN host h ON vr.host_id = h.host_id
-WHERE e.exit_time IS NOT NULL;
+```bash
+Connected to MySQL database
+Server is running on port 5000
+```
 
--- Count how many requests each host received
-SELECT 
-    h.full_name AS host_name,
-    COUNT(vr.request_id) AS total_requests
-FROM host h
-LEFT JOIN visit_request vr ON h.host_id = vr.host_id
-GROUP BY h.host_id, h.full_name;
+---
 
--- Count how many requests each visitor made
-SELECT 
-    v.full_name AS visitor_name,
-    COUNT(vr.request_id) AS total_requests
-FROM visitor v
-LEFT JOIN visit_request vr ON v.visitor_id = vr.visitor_id
-GROUP BY v.visitor_id, v.full_name;
+### 6️⃣ Test API
+
+Open in browser:
+
+```bash
+http://localhost:5000/
+```
+
+Or use Postman for endpoints like:
+
+```bash
+POST /api/visitors
+```
+
+---
+
+## 🛑 Important Notes
+
+* Do **NOT** push `.env` file to GitHub
+* `.env` is already ignored using `.gitignore`
+* `node_modules` should not be pushed
+* If dependencies fail, run:
+
+  ```bash
+  npm install
+  ```
+
+---
+
+## 🔁 Contribution Rules
+
+This repository is **restricted**.
+
+❌ Direct push access is **NOT allowed**
+
+### To contribute:
+
+1. Fork the repository
+2. Clone your fork
+3. Create a new branch
+4. Make changes
+5. Push to your fork
+6. Create a Pull Request
+
+---
+
+## 📁 Project Structure
+
+```
+backend/
+│
+├── src/
+│   ├── config/        # Database connection
+│   ├── controllers/   # Business logic
+│   ├── routes/        # API routes
+│   ├── models/        # (optional)
+│   ├── middleware/    # (future use)
+│   ├── utils/         # Helper functions
+│   └── app.js         # Express app setup
+│
+├── server.js          # Entry point
+├── database.sql       # MySQL schema + sample data
+├── .env               # Local environment variables (not pushed)
+├── .gitignore
+├── package.json
+```
+
+---
+
+## 🧪 API Overview
+
+### Visitor API
+
+```
+POST /api/visitors
+```
+
+Create a new visitor.
+
+---
+
+## 📊 Database Design Highlights
+
+* Fully normalized relational schema
+* Foreign key constraints for data integrity
+* ENUM-based status management
+* Separate entry log system
+* Optimized join queries for analytics
+
+---
+
+## 🚀 Current Status
+
+### ✅ Completed
+
+* Database schema design
+* MySQL relationships & constraints
+* Express server setup
+* MySQL connection (pool)
+* Create Visitor API
+
+### 🔄 In Progress
+
+* Visit Request APIs
+* Admin Approval APIs
+* Entry / Exit APIs
+* Query APIs
+
+---
+
+## 🧠 Learning Outcomes
+
+This project demonstrates:
+
+* REST API design
+* Backend architecture
+* SQL + relational modeling
+* Business logic implementation
+* Async handling in Node.js
+* Error handling and validation
+
+---
+
+## 📌 Future Improvements
+
+* Authentication (JWT)
+* Role-based access control
+* Deployment (Render / Docker)
+* Frontend UI integration
+
+---
+
+## 👨‍💻 Author
+
+Built as part of DBMS + Backend Learning Project 🚀
