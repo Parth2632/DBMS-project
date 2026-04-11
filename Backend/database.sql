@@ -89,10 +89,10 @@ VALUES
 
 INSERT INTO visit_request (visitor_id, host_id, visit_date, purpose)
 VALUES
-(1, 1, '2026-04-06', 'Project Discussion'),
-(2, 2, '2026-04-06', 'Academic Meeting'),
-(3, 3, '2026-04-06', 'Office Work'),
-(1, 2, '2026-04-07', 'Internship Guidance');
+(1, 1, CURDATE(), 'Project Discussion'),
+(2, 2, CURDATE(), 'Academic Meeting'),
+(3, 3, CURDATE(), 'Office Work'),
+(1, 2, DATE_ADD(CURDATE(), INTERVAL 1 DAY), 'Internship Guidance');
 
 -- =========================
 -- 3. APPROVAL / REJECTION
